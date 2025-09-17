@@ -1,0 +1,21 @@
+
+TODO
+- flyway
+- update indexes to search by shortcode
+- caching
+- distributed tracing
+- circuit breaker and rate limit
+- profile like E2E : add postgres and make the attributes with placeholders
+- unit test
+- component test
+- webmvc test
+- blackbox test
+- versioning
+- docker
+- docker compose
+- kubernetes charts and values
+- mention about secrets loader vault and how to store the salt / 
+- security
+- swagger
+- documentation
+- 

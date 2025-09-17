@@ -1,0 +1,42 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: url-shortener-service
+
+  datasource:
+    url: jdbc:h2:mem:urlshortenerdb
+    driverClassName: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: 'create-drop'
+      # for demo purposes better to have validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  h2:
+    console:
+      enabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+
+#This config should be placed in a secret store like Vault and injected as an environment variable at startup
+urlshortener:
+  hashid:
+    salt: my-secret-salt
+    min-length: 6
