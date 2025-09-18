@@ -11,10 +11,10 @@ TODO
 - distributed tracing and logging
 - circuit breaker and rate limit
 - profile like E2E : add postgres and make the attributes with placeholders
-- versioning
 - docker
 - docker compose
 - kubernetes charts and values
+- version
 - mention about secrets loader vault and how to store the salt / 
 - security
 - swagger

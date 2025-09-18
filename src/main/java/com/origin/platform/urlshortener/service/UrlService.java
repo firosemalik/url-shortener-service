@@ -1,15 +1,16 @@
 package com.origin.platform.urlshortener.service;
 
 import com.origin.platform.urlshortener.config.HashidProperties;
+import com.origin.platform.urlshortener.event.UrlAccessedEvent;
 import com.origin.platform.urlshortener.exception.ResourceAlreadyExistException;
 import com.origin.platform.urlshortener.exception.ResourceNotFoundException;
-import com.origin.platform.urlshortener.model.AccessLog;
 import com.origin.platform.urlshortener.model.UrlMapping;
 import com.origin.platform.urlshortener.repository.UrlRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hashids.Hashids;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ public class UrlService {
 
     private final UrlRepository repository;
     private final HashidProperties hashidProperties;
+    private final ApplicationEventPublisher eventPublisher;
 
     private Hashids hashids;
 
@@ -55,26 +57,24 @@ public class UrlService {
         return shortCode;
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public String getOriginalUrl(String code, String ip, String userAgent, String referrer) {
         log.info("Resolving original URL for code: {} from IP: {} UA: {} Referrer: {}", code, ip, userAgent, referrer);
 
         // An in memory spring cache with caffeine or distributed like redis can be used to improve here
-        // The call to update the hit and access log should be asynchronous and in a separate transaction
-        // Simple to @Async but the trade-off is managing thread pool
 
         UrlMapping mapping = getUrlMappingCached(code);
-        mapping.setHitCount(mapping.getHitCount() + 1);
-        AccessLog log = AccessLog.builder()
-                .accessedAt(OffsetDateTime.now())
-                .ipAddress(ip)
-                .userAgent(userAgent)
-                .referrer(referrer)
-                .urlMapping(mapping)
-                .build();
 
-        mapping.getAccessLogs().add(log);
-        repository.save(mapping);
+        // The call to update the hit and access log should be asynchronous and in a separate transaction
+        // Emit event instead of direct save, this is just to demonstrate but not the final solution
+        eventPublisher.publishEvent(new UrlAccessedEvent(
+                code,
+                OffsetDateTime.now(),
+                ip,
+                userAgent,
+                referrer
+        ));
+        // Simple to use spring event with @Async and handle the update, but the trade-off is managing thread pool
 
         return mapping.getOriginalUrl();
     }
