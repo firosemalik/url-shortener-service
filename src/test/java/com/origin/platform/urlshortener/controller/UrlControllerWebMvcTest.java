@@ -2,6 +2,7 @@ package com.origin.platform.urlshortener.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.origin.platform.urlshortener.dto.request.ShortenUrlRequest;
+import com.origin.platform.urlshortener.service.AccessLogService;
 import com.origin.platform.urlshortener.service.UrlService;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -12,7 +13,6 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.Matchers.*;
@@ -31,6 +31,8 @@ class UrlControllerWebMvcTest {
     private ObjectMapper objectMapper;
     @MockBean
     private UrlService urlService;
+    @MockBean
+    private AccessLogService accessLogService;
 
     @Test
     void whenValidShortenUrlRequest_thenReturnsShortUrl() throws Exception {
@@ -39,7 +41,7 @@ class UrlControllerWebMvcTest {
 
         Mockito.when(urlService.shortenUrl(anyString())).thenReturn("abc123");
 
-        mockMvc.perform(post("/shortener/urls")
+        mockMvc.perform(post("/urls")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -51,7 +53,7 @@ class UrlControllerWebMvcTest {
     void whenInvalidShortenUrlRequest_thenReturnsValidationError() throws Exception {
         ShortenUrlRequest request = new ShortenUrlRequest();
         // No originalUrl set, should fail validation
-        mockMvc.perform(post("/shortener/urls")
+        mockMvc.perform(post("/urls")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
@@ -62,7 +64,7 @@ class UrlControllerWebMvcTest {
     @Test
     void whenValidCodeForRedirect_thenReturnsFound() throws Exception {
         Mockito.when(urlService.getOriginalUrl(anyString(), anyString(), any(), any())).thenReturn("https://example.com");
-        mockMvc.perform(get("/shortener/urls/abc123/redirect"))
+        mockMvc.perform(get("/urls/abc123/redirect"))
                 .andExpect(status().isFound())
                 .andExpect(header().string("Location", "https://example.com"));
     }
@@ -73,16 +75,18 @@ class UrlControllerWebMvcTest {
         Mockito.when(urlService.getUrlWithLogs(anyString()))
                 .thenReturn(Optional.of(urlMapping));
 
-        mockMvc.perform(get("/shortener/urls/abc123"))
+        mockMvc.perform(get("/urls/abc123"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.accessLogs").exists());
+                .andExpect(jsonPath("$._links.accessLogs").exists())
+                .andExpect(jsonPath("$._links.accessLogs.href")
+                        .value("http://localhost/urls/abc123/access-logs?page=0&size=20"));
     }
 
     @Test
     void whenInvalidCodeForUrlInfo_thenReturnsNotFound() throws Exception {
         Mockito.when(urlService.getUrlWithLogs(anyString()))
                 .thenReturn(Optional.empty());
-        mockMvc.perform(get("/shortener/urls/invalid"))
-                .andExpect(status().isInternalServerError()); // Controller throws RuntimeException for not found
+        mockMvc.perform(get("/urls/invalid"))
+                .andExpect(status().is4xxClientError());
     }
 }

@@ -1,16 +1,24 @@
 package com.origin.platform.urlshortener.controller;
 
 import com.origin.platform.urlshortener.dto.request.ShortenUrlRequest;
+import com.origin.platform.urlshortener.dto.response.AccessLogPageResponse;
+import com.origin.platform.urlshortener.dto.response.AccessLogResponse;
 import com.origin.platform.urlshortener.dto.response.ShortenUrlResponse;
 import com.origin.platform.urlshortener.dto.response.UrlInfoResponse;
-import com.origin.platform.urlshortener.mapper.AccessLogMapper;
+import com.origin.platform.urlshortener.exception.ResourceNotFoundException;
 import com.origin.platform.urlshortener.mapper.UrlMapper;
+import com.origin.platform.urlshortener.service.AccessLogService;
 import com.origin.platform.urlshortener.service.UrlService;
 import com.origin.platform.urlshortener.util.UrlUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,21 +26,20 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 
 @RestController
-@RequestMapping("/shortener/urls")
+@RequestMapping("/urls")
 @RequiredArgsConstructor
-
 public class UrlController {
 
-    private final UrlService service;
+    private final UrlService urlService;
+    private final AccessLogService accessLogService;
     private final UrlMapper urlMapper;
-    private final AccessLogMapper accessLogMapper;
 
     @Value("${urlshortener.endpoint.path:http://localhost:8080/}")
     private String endpointPath;
 
     @PostMapping
     public ResponseEntity<ShortenUrlResponse> createShortUrl(@Valid @RequestBody ShortenUrlRequest request) {
-        String shortCode = service.shortenUrl(request.getOriginalUrl());
+        String shortCode = urlService.shortenUrl(request.getOriginalUrl());
         String shortUrl = UrlUtil.buildShortUrl(endpointPath, shortCode);
 
         ShortenUrlResponse response = urlMapper.toShortenUrlResponse(request.getOriginalUrl(), shortUrl);
@@ -47,7 +54,7 @@ public class UrlController {
             HttpServletRequest request) {
 
         String ip = request.getRemoteAddr();
-        String originalUrl = service.getOriginalUrl(code, ip, userAgent, referrer);
+        String originalUrl = urlService.getOriginalUrl(code, ip, userAgent, referrer);
 
         return ResponseEntity.status(HttpStatus.FOUND)
                 .location(URI.create(originalUrl))
@@ -55,22 +62,36 @@ public class UrlController {
     }
 
     @GetMapping("/{code}")
-    public ResponseEntity<UrlInfoResponse> getUrlInfo(
+    public ResponseEntity<EntityModel<UrlInfoResponse>> getUrlInfo(
             @PathVariable String code) {
 
-        //TODO Add hateos and work on this part to return access log separately
-        var urlMapping = service.getUrlWithLogs(code)
+        var urlMapping = urlService.getUrlWithLogs(code)
                 .stream()
                 .findFirst()
-                .orElseThrow(() -> new RuntimeException("Short code not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Short code not found"));
 
         UrlInfoResponse response = urlMapper.toUrlInfoResponse(urlMapping);
-        // Set accessLogs using AccessLogMapper
-        if (urlMapping.getAccessLogs() != null) {
-            response.setAccessLogs(urlMapping.getAccessLogs().stream()
-                    .map(accessLogMapper::toAccessLogResponse)
-                    .toList());
-        }
-        return ResponseEntity.ok(response);
+        EntityModel<UrlInfoResponse> model = EntityModel.of(response);
+        model.add(
+                WebMvcLinkBuilder.linkTo(
+                        WebMvcLinkBuilder.methodOn(UrlController.class)
+                                .getAccessLogs(code, 0, 20)
+                ).withRel("accessLogs")
+        );
+        return ResponseEntity.ok(model);
+    }
+
+    @GetMapping("/{code}/access-logs")
+    public ResponseEntity<AccessLogPageResponse> getAccessLogs(
+            @PathVariable String code,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+        Page<AccessLogResponse> logPage = accessLogService.getAccessLogs(code, pageable);
+        boolean hasMore = logPage.hasNext();
+        return ResponseEntity.ok(
+                new AccessLogPageResponse(logPage.getContent(), hasMore, logPage.getTotalElements())
+        );
     }
 }

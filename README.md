@@ -2,12 +2,13 @@
 TODO
 - flyway
 - update indexes to search by shortcode
-- caching
+- hateos with access log
 - unit test
 - component test
 - webmvc test
 - blackbox test
-- distributed tracing
+- caching
+- distributed tracing and logging
 - circuit breaker and rate limit
 - profile like E2E : add postgres and make the attributes with placeholders
 - versioning

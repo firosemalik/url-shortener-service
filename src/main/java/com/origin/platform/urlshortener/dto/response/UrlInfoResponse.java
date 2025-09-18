@@ -6,7 +6,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 
 @Data
 @Builder
@@ -17,5 +16,4 @@ public class UrlInfoResponse {
     private String shortCode;
     private int hitCount;
     private OffsetDateTime createdAt;
-    private List<AccessLogResponse> accessLogs;
 }
