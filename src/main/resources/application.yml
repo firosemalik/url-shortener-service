@@ -4,7 +4,6 @@ server:
 spring:
   application:
     name: url-shortener-service
-
   datasource:
     url: jdbc:h2:mem:urlshortenerdb
     driverClassName: org.h2.Driver
