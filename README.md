@@ -97,6 +97,7 @@ Managed by Flyway. See `src/main/resources/db/migration/` for migration scripts.
 - **Component Tests**: For service layer (with Spring context)
 - **WebMvc Tests**: For controller layer (mocked services)
 - **Exception Handler Tests**: For error response validation
+- **Blackbox tests (RestAssure)**: Checks API aligns with the contract
 
 Run all tests:
 ```sh
