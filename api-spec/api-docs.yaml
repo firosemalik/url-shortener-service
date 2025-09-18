@@ -1,0 +1,179 @@
+openapi: 3.1.0
+info:
+  title: OpenAPI definition
+  version: v0
+servers:
+- url: http://localhost:8085
+  description: Generated server url
+paths:
+  /urls:
+    post:
+      tags:
+      - url-controller
+      operationId: createShortUrl
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShortenUrlRequest"
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/ShortenUrlResponse"
+  /urls/{code}:
+    get:
+      tags:
+      - url-controller
+      operationId: getUrlInfo
+      parameters:
+      - name: code
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/EntityModelUrlInfoResponse"
+  /urls/{code}/redirect:
+    get:
+      tags:
+      - url-controller
+      operationId: redirect
+      parameters:
+      - name: code
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: User-Agent
+        in: header
+        required: false
+        schema:
+          type: string
+      - name: Referer
+        in: header
+        required: false
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+  /urls/{code}/access-logs:
+    get:
+      tags:
+      - url-controller
+      operationId: getAccessLogs
+      parameters:
+      - name: code
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      responses:
+        "200":
+          description: OK
+          content:
+            '*/*':
+              schema:
+                $ref: "#/components/schemas/AccessLogPageResponse"
+components:
+  schemas:
+    ShortenUrlRequest:
+      type: object
+      properties:
+        originalUrl:
+          type: string
+          minLength: 1
+      required:
+      - originalUrl
+    ShortenUrlResponse:
+      type: object
+      properties:
+        originalUrl:
+          type: string
+        shortUrl:
+          type: string
+    EntityModelUrlInfoResponse:
+      type: object
+      properties:
+        originalUrl:
+          type: string
+        shortCode:
+          type: string
+        hitCount:
+          type: integer
+          format: int32
+        createdAt:
+          type: string
+          format: date-time
+        _links:
+          $ref: "#/components/schemas/Links"
+    AccessLogPageResponse:
+      type: object
+      properties:
+        logs:
+          type: array
+          items:
+            $ref: "#/components/schemas/AccessLogResponse"
+        hasMore:
+          type: boolean
+        total:
+          type: integer
+          format: int64
+    AccessLogResponse:
+      type: object
+      properties:
+        accessedAt:
+          type: string
+          format: date-time
+        ipAddress:
+          type: string
+        userAgent:
+          type: string
+        referrer:
+          type: string
+    Link:
+      type: object
+      properties:
+        href:
+          type: string
+        hreflang:
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+        deprecation:
+          type: string
+        profile:
+          type: string
+        name:
+          type: string
+        templated:
+          type: boolean
+    Links:
+      type: object
+      additionalProperties:
+        $ref: "#/components/schemas/Link"
