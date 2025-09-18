@@ -4,7 +4,6 @@ server:
 spring:
   application:
     name: url-shortener-service
-
   datasource:
     url: jdbc:h2:mem:urlshortenerdb
     driverClassName: org.h2.Driver
@@ -34,9 +33,20 @@ management:
       probes:
         enabled: true
       show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
 
-#This config should be placed in a secret store like Vault and injected as an environment variable at startup
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
+
+#This hashid config should be placed in a secret store like Vault and injected as an environment variable at startup
 urlshortener:
+  endpoint:
+    protocol: http
+    host: localhost
+    path: ${urlshortener.endpoint.protocol}://${urlshortener.endpoint.host}:${server.port}/
   hashid:
     salt: my-secret-salt
     min-length: 6

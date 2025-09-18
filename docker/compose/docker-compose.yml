@@ -1,0 +1,30 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:15
+    container_name: urlshortener-postgres
+    environment:
+      POSTGRES_DB: urlshortenerdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  url-shortener-service:
+    image: firosemalik/url-shortener-service:1.0.0
+    container_name: url-shortener-service
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/urlshortenerdb
+      DB_DRIVER: org.postgresql.Driver
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      SPRING_PROFILES_ACTIVE: e2e
+    depends_on:
+      - postgres
+    ports:
+      - "8085:8085"
+
+volumes:
+  pgdata:
