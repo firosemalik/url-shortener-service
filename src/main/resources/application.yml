@@ -34,6 +34,13 @@ management:
       probes:
         enabled: true
       show-details: always
+  tracing:
+    sampling:
+      probability: 1.0
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]"
 
 #This hashid config should be placed in a secret store like Vault and injected as an environment variable at startup
 urlshortener:

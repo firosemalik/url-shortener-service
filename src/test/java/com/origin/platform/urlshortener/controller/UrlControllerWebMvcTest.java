@@ -2,6 +2,7 @@ package com.origin.platform.urlshortener.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.origin.platform.urlshortener.dto.request.ShortenUrlRequest;
+import com.origin.platform.urlshortener.dto.response.AccessLogResponse;
 import com.origin.platform.urlshortener.service.AccessLogService;
 import com.origin.platform.urlshortener.service.UrlService;
 import org.junit.jupiter.api.Test;
@@ -10,6 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -88,5 +92,26 @@ class UrlControllerWebMvcTest {
                 .thenReturn(Optional.empty());
         mockMvc.perform(get("/urls/invalid"))
                 .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    void whenValidCodeForAccessLogs_thenReturnsLogs() throws Exception {
+        AccessLogResponse logResponse = Mockito.mock(AccessLogResponse.class);
+        Page<AccessLogResponse> page =
+                new PageImpl<>(java.util.List.of(logResponse), PageRequest.of(0, 20), 1);
+        Mockito.when(accessLogService.getAccessLogs(anyString(), any())).thenReturn(page);
+        //No content asserted as the access-log flow is demo only
+        mockMvc.perform(get("/urls/abc123/access-logs"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void whenInvalidCodeForAccessLogs_thenReturnsEmptyLogs() throws Exception {
+        Page<AccessLogResponse> page =
+                new PageImpl<>(java.util.List.of(), PageRequest.of(0, 20), 0);
+        Mockito.when(accessLogService.getAccessLogs(anyString(), any())).thenReturn(page);
+        //No content asserted as the access-log flow is demo only
+        mockMvc.perform(get("/urls/invalid/access-logs"))
+                .andExpect(status().isOk());
     }
 }

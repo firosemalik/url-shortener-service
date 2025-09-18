@@ -8,20 +8,18 @@ import com.origin.platform.urlshortener.model.UrlMapping;
 import com.origin.platform.urlshortener.repository.UrlRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.hashids.Hashids;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UrlService {
 
     private final UrlRepository repository;
@@ -36,6 +34,7 @@ public class UrlService {
 
     @Transactional
     public String shortenUrl(String originalUrl) {
+        log.info("Shortening originalUrl: {}", originalUrl);
         // Check if the originalUrl already exists
         if (repository.findByOriginalUrl(originalUrl).isPresent()) {
             throw new ResourceAlreadyExistException("URL already exists");
@@ -58,6 +57,7 @@ public class UrlService {
 
     @Transactional
     public String getOriginalUrl(String code, String ip, String userAgent, String referrer) {
+        log.info("Resolving original URL for code: {} from IP: {} UA: {} Referrer: {}", code, ip, userAgent, referrer);
         UrlMapping mapping = repository.findByShortCode(code)
                 .orElseThrow(() -> new ResourceNotFoundException("Short code not found: " + code));
         mapping.setHitCount(mapping.getHitCount() + 1);
@@ -77,6 +77,7 @@ public class UrlService {
 
     @Transactional(readOnly = true)
     public Optional<UrlMapping> getUrlWithLogs(String code) {
+        log.info("Fetching UrlMapping with logs for code: {}", code);
         return repository.findByShortCodeWithLogs(code);
     }
 }

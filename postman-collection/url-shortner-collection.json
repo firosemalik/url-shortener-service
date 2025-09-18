@@ -1,55 +1,39 @@
 {
   "info": {
-    "name": "URL Shortener API",
+    "name": "URL Shortener Service (Updated)",
     "_postman_id": "url-shortener-api-collection",
-    "description": "Postman collection for testing the URL Shortener API",
+    "description": "Postman collection for testing the updated URL Shortener API",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
-      "name": "Shorten URL",
+      "name": "Create Short URL",
       "request": {
         "method": "POST",
         "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
+          { "key": "Content-Type", "value": "application/json" }
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n    \"originalUrl\": \"https://www.example.com/blog/post1\"\n}"
+          "raw": "{\n  \"originalUrl\": \"https://example.com\"\n}"
         },
         "url": {
-          "raw": "http://localhost:8085/shortener/urls",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8085",
-          "path": ["shortener", "urls"]
+          "raw": "{{baseUrl}}/urls",
+          "host": ["{{baseUrl}}"],
+          "path": ["urls"]
         }
       },
       "response": []
     },
     {
-      "name": "Redirect Short URL",
+      "name": "Redirect to Original URL",
       "request": {
         "method": "GET",
-        "header": [
-          {
-            "key": "User-Agent",
-            "value": "PostmanRuntime/7.29.2"
-          },
-          {
-            "key": "Referer",
-            "value": "https://www.example.com"
-          }
-        ],
+        "header": [],
         "url": {
-          "raw": "http://localhost:8085/shortener/urls/{{shortCode}}/redirect",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8085",
-          "path": ["shortener", "urls", "{{shortCode}}", "redirect"]
+          "raw": "{{baseUrl}}/urls/:code/redirect",
+          "host": ["{{baseUrl}}"],
+          "path": ["urls", ":code", "redirect"]
         }
       },
       "response": []
@@ -58,16 +42,11 @@
       "name": "Get URL Info",
       "request": {
         "method": "GET",
+        "header": [],
         "url": {
-          "raw": "http://localhost:8085/shortener/urls/{{shortCode}}",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8085",
-          "path": ["shortener", "urls", "{{shortCode}}"],
-          "query": [
-            { "key": "page", "value": "0" },
-            { "key": "size", "value": "10" }
-          ]
+          "raw": "{{baseUrl}}/urls/:code",
+          "host": ["{{baseUrl}}"],
+          "path": ["urls", ":code"]
         }
       },
       "response": []
@@ -76,21 +55,21 @@
       "name": "Get Access Logs",
       "request": {
         "method": "GET",
+        "header": [],
         "url": {
-          "raw": "http://localhost:8085/shortener/urls/{{shortCode}}/logs?page=0&size=10",
-          "protocol": "http",
-          "host": ["localhost"],
-          "port": "8085",
-          "path": ["shortener", "urls", "{{shortCode}}", "logs"]
+          "raw": "{{baseUrl}}/urls/:code/access-logs?page=0&size=20",
+          "host": ["{{baseUrl}}"],
+          "path": ["urls", ":code", "access-logs"],
+          "query": [
+            { "key": "page", "value": "0" },
+            { "key": "size", "value": "20" }
+          ]
         }
       },
       "response": []
     }
   ],
   "variable": [
-    {
-      "key": "shortCode",
-      "value": "abc123"
-    }
+    { "key": "baseUrl", "value": "http://localhost:8085" }
   ]
 }
