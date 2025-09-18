@@ -35,8 +35,12 @@ management:
         enabled: true
       show-details: always
 
-#This config should be placed in a secret store like Vault and injected as an environment variable at startup
+#This hashid config should be placed in a secret store like Vault and injected as an environment variable at startup
 urlshortener:
+  endpoint:
+    protocol: http
+    host: localhost
+    path: ${urlshortener.endpoint.protocol}://${urlshortener.endpoint.host}:${server.port}/
   hashid:
     salt: my-secret-salt
     min-length: 6

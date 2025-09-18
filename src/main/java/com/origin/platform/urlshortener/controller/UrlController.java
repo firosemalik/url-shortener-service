@@ -1,14 +1,16 @@
 package com.origin.platform.urlshortener.controller;
 
 import com.origin.platform.urlshortener.dto.request.ShortenUrlRequest;
-import com.origin.platform.urlshortener.dto.response.AccessLogResponse;
 import com.origin.platform.urlshortener.dto.response.ShortenUrlResponse;
 import com.origin.platform.urlshortener.dto.response.UrlInfoResponse;
+import com.origin.platform.urlshortener.mapper.AccessLogMapper;
+import com.origin.platform.urlshortener.mapper.UrlMapper;
 import com.origin.platform.urlshortener.service.UrlService;
+import com.origin.platform.urlshortener.util.UrlUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,20 +20,22 @@ import java.net.URI;
 @RestController
 @RequestMapping("/shortener/urls")
 @RequiredArgsConstructor
+
 public class UrlController {
 
     private final UrlService service;
+    private final UrlMapper urlMapper;
+    private final AccessLogMapper accessLogMapper;
+
+    @Value("${urlshortener.endpoint.path:http://localhost:8080/}")
+    private String endpointPath;
 
     @PostMapping
     public ResponseEntity<ShortenUrlResponse> createShortUrl(@Valid @RequestBody ShortenUrlRequest request) {
         String shortCode = service.shortenUrl(request.getOriginalUrl());
-        String shortUrl = "http://localhost:8085/" + shortCode;
+        String shortUrl = UrlUtil.buildShortUrl(endpointPath, shortCode);
 
-        ShortenUrlResponse response = ShortenUrlResponse.builder()
-                .originalUrl(request.getOriginalUrl())
-                .shortUrl(shortUrl)
-                .build();
-
+        ShortenUrlResponse response = urlMapper.toShortenUrlResponse(request.getOriginalUrl(), shortUrl);
         return ResponseEntity.ok(response);
     }
 
@@ -52,30 +56,21 @@ public class UrlController {
 
     @GetMapping("/{code}")
     public ResponseEntity<UrlInfoResponse> getUrlInfo(
-            @PathVariable String code,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @PathVariable String code) {
 
-        var urlMapping = service.getUrlWithLogs(code, PageRequest.of(page, size))
+        //TODO Add hateos and work on this part to return access log separately
+        var urlMapping = service.getUrlWithLogs(code)
                 .stream()
                 .findFirst()
                 .orElseThrow(() -> new RuntimeException("Short code not found"));
 
-        UrlInfoResponse response = UrlInfoResponse.builder()
-                .originalUrl(urlMapping.getOriginalUrl())
-                .shortCode(urlMapping.getShortCode())
-                .hitCount(urlMapping.getHitCount())
-                .createdAt(urlMapping.getCreatedAt())
-                .accessLogs(urlMapping.getAccessLogs().stream().map(log ->
-                        AccessLogResponse.builder()
-                                .accessedAt(log.getAccessedAt())
-                                .ipAddress(log.getIpAddress())
-                                .userAgent(log.getUserAgent())
-                                .referrer(log.getReferrer())
-                                .build()
-                ).toList())
-                .build();
-
+        UrlInfoResponse response = urlMapper.toUrlInfoResponse(urlMapping);
+        // Set accessLogs using AccessLogMapper
+        if (urlMapping.getAccessLogs() != null) {
+            response.setAccessLogs(urlMapping.getAccessLogs().stream()
+                    .map(accessLogMapper::toAccessLogResponse)
+                    .toList());
+        }
         return ResponseEntity.ok(response);
     }
 }

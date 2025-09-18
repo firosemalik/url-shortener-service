@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -29,6 +30,13 @@ public class UrlMapping {
 
     private int hitCount;
 
-    @OneToMany(mappedBy = "urlMapping", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "urlMapping", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<AccessLog> accessLogs;
+
+    public List<AccessLog> getAccessLogs() {
+        if (this.accessLogs == null) {
+            this.accessLogs = new ArrayList<>();
+        }
+        return this.accessLogs;
+    }
 }
