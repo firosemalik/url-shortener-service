@@ -58,8 +58,12 @@ public class UrlService {
     @Transactional
     public String getOriginalUrl(String code, String ip, String userAgent, String referrer) {
         log.info("Resolving original URL for code: {} from IP: {} UA: {} Referrer: {}", code, ip, userAgent, referrer);
-        UrlMapping mapping = repository.findByShortCode(code)
-                .orElseThrow(() -> new ResourceNotFoundException("Short code not found: " + code));
+
+        // An in memory spring cache with caffeine or distributed like redis can be used to improve here
+        // The call to update the hit and access log should be asynchronous and in a separate transaction
+        // Simple to @Async but the trade-off is managing thread pool
+
+        UrlMapping mapping = getUrlMappingCached(code);
         mapping.setHitCount(mapping.getHitCount() + 1);
         AccessLog log = AccessLog.builder()
                 .accessedAt(OffsetDateTime.now())
@@ -73,6 +77,12 @@ public class UrlService {
         repository.save(mapping);
 
         return mapping.getOriginalUrl();
+    }
+
+    private UrlMapping getUrlMappingCached(String code) {
+        UrlMapping mapping = repository.findByShortCode(code)
+                .orElseThrow(() -> new ResourceNotFoundException("Short code not found: " + code));
+        return mapping;
     }
 
     @Transactional(readOnly = true)
