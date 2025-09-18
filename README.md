@@ -24,6 +24,7 @@ This project is a URL Shortener service built with Spring Boot 3.5, supporting t
 - Swagger UI: [http://localhost:8085/swagger-ui/index.html](http://localhost:8085/swagger-ui/index.html)
 - OpenAPI JSON: [http://localhost:8085/v3/api-docs](http://localhost:8085/v3/api-docs)
 - API Spec: See [`api-spec/api-docs.yaml`](api-spec/api-docs.yaml)
+- Postman collection: postman-collection/url-shortner-collection.json
 
 ### Main Endpoints
 - `POST /urls` — Shorten a URL
@@ -32,6 +33,8 @@ This project is a URL Shortener service built with Spring Boot 3.5, supporting t
 - `GET /urls/{code}/access-logs` — Paginated access logs for a short URL
 
 ---
+
+
 
 ## How to Compile
 This is a Maven project (Java 21):
