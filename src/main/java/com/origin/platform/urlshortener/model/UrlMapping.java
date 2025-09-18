@@ -14,12 +14,11 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode
 public class UrlMapping {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @EqualsAndHashCode.Include
     private Long id;
 
     @Column(name = "original_url", nullable = false, length = 2048, unique = true)
@@ -30,7 +29,7 @@ public class UrlMapping {
 
     private OffsetDateTime createdAt;
 
-    private int hitCount;
+    private Integer hitCount;
 
     @OneToMany(mappedBy = "urlMapping", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<AccessLog> accessLogs;

@@ -57,7 +57,7 @@ public class UrlService {
         return shortCode;
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public String getOriginalUrl(String code, String ip, String userAgent, String referrer) {
         log.info("Resolving original URL for code: {} from IP: {} UA: {} Referrer: {}", code, ip, userAgent, referrer);
 
