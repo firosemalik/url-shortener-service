@@ -73,8 +73,8 @@ mvn clean package
 Build and run the image:
 
 ```sh
-docker build -t url-shortener-service .
-docker run -p 8085:8085 url-shortener-service
+docker build -t firosemalik/url-shortener-service:1.0.0 .
+docker run -p 8085:8085 firosemalik/url-shortener-service:1.0.0
 ```
 
 ### Docker Compose (with PostgreSQL)

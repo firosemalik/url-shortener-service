@@ -1,3 +1,4 @@
+# Demonstrating only : environment variables assigned in the container mapped to override spring configs
 version: '3.8'
 services:
   postgres:

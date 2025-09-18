@@ -13,7 +13,7 @@ FROM eclipse-temurin:21-jre-alpine
 #WORKDIR /app
 
 # Copy the Spring Boot jar to the container
-COPY target/*.jar app.jar
+COPY target/urlshortener-0.0.1-SNAPSHOT.jar app.jar
 
 # Change file ownership to the non-root user
 #RUN chown spring:spring app.jar
