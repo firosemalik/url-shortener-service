@@ -41,4 +41,9 @@ public class UrlMapping {
         }
         return this.accessLogs;
     }
+
+    public void updateHit() {
+        this.hitCount = this.hitCount + 1;
+    }
+
 }

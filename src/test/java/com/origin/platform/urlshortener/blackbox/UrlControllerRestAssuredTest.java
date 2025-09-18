@@ -3,9 +3,12 @@ package com.origin.platform.urlshortener.blackbox;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 
 import static io.restassured.RestAssured.*;
@@ -20,9 +23,20 @@ public class UrlControllerRestAssuredTest {
     @LocalServerPort
     private int port;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @BeforeAll
     static void setup() {
         RestAssured.baseURI = "http://localhost";
+    }
+
+    @BeforeEach
+    void cleanDb() {
+        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY FALSE");
+        jdbcTemplate.execute("TRUNCATE TABLE access_log");
+        jdbcTemplate.execute("TRUNCATE TABLE url_mapping");
+        jdbcTemplate.execute("SET REFERENTIAL_INTEGRITY TRUE");
     }
 
     @Test
@@ -40,6 +54,30 @@ public class UrlControllerRestAssuredTest {
                 .statusCode(200)
                 .body("originalUrl", equalTo(originalUrl))
                 .body("shortUrl", not(emptyString()));
+    }
+
+    @Test
+    void whenRedirectRequest_thenReturnLocationHeader() {
+        // First, create a short URL
+        String originalUrl = "https://springdoc.org/";
+        String requestBody = "{\"originalUrl\": \"" + originalUrl + "\"}";
+        String code =
+                given()
+                        .port(port)
+                        .contentType(ContentType.JSON)
+                        .body(requestBody)
+                        .when()
+                        .post("/urls")
+                        .then()
+                        .statusCode(200)
+                        .extract().path("shortUrl").toString().replaceAll(".*/", "");
+
+        given()
+                .port(port)
+                .when()
+                .get("/urls/" + code + "/redirect")
+                .then()
+                .statusCode(200);
     }
 
     @Test

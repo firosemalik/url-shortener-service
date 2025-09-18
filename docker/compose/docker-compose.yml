@@ -14,7 +14,7 @@ services:
 
   url-shortener-service:
     build: .
-    container_name: url-shortener-service
+    container_name: firosemalik/url-shortener-service
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/urlshortenerdb
       DB_DRIVER: org.postgresql.Driver

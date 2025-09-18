@@ -27,7 +27,7 @@ public class UrlAccessedEventListener {
 
         log.info("UrlAccessedEvent handling url access code: {}", event.code());
 
-        mapping.setHitCount(mapping.getHitCount() + 1);
+        mapping.updateHit();
         AccessLog log = AccessLog.builder()
                 .accessedAt(event.accessedAt())
                 .ipAddress(event.ipAddress())
