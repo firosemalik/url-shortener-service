@@ -5,6 +5,7 @@ import com.origin.platform.urlshortener.dto.response.AccessLogPageResponse;
 import com.origin.platform.urlshortener.dto.response.AccessLogResponse;
 import com.origin.platform.urlshortener.dto.response.ShortenUrlResponse;
 import com.origin.platform.urlshortener.dto.response.UrlInfoResponse;
+import com.origin.platform.urlshortener.event.UrlAccessedEvent;
 import com.origin.platform.urlshortener.exception.ResourceNotFoundException;
 import com.origin.platform.urlshortener.mapper.UrlMapper;
 import com.origin.platform.urlshortener.service.AccessLogService;
@@ -15,6 +16,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -25,6 +27,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
+import java.time.OffsetDateTime;
 
 @RestController
 @RequestMapping("/urls")
@@ -36,6 +39,7 @@ public class UrlController {
     private final UrlService urlService;
     private final AccessLogService accessLogService;
     private final UrlMapper urlMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Value("${urlshortener.endpoint.path:http://localhost:8080/}")
     private String endpointPath;
@@ -61,6 +65,18 @@ public class UrlController {
 
         String ip = request.getRemoteAddr();
         String originalUrl = urlService.getOriginalUrl(code, ip, userAgent, referrer);
+
+        // This is just to demonstrate but not the final solution
+        // The call to update the hit and access log should be asynchronous and in a separate transaction
+        // Emit event instead of direct save
+        eventPublisher.publishEvent(new UrlAccessedEvent(
+                code,
+                OffsetDateTime.now(),
+                ip,
+                userAgent,
+                referrer
+        ));
+        // Simple to use spring event with @Async and handle the update, but the trade-off is managing thread pool
 
         return ResponseEntity.status(HttpStatus.FOUND)
                 .location(URI.create(originalUrl))

@@ -1,16 +1,15 @@
 package com.origin.platform.urlshortener.service;
 
 import com.origin.platform.urlshortener.config.HashidProperties;
-import com.origin.platform.urlshortener.event.UrlAccessedEvent;
 import com.origin.platform.urlshortener.exception.ResourceAlreadyExistException;
 import com.origin.platform.urlshortener.exception.ResourceNotFoundException;
+import com.origin.platform.urlshortener.model.AccessLog;
 import com.origin.platform.urlshortener.model.UrlMapping;
 import com.origin.platform.urlshortener.repository.UrlRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.hashids.Hashids;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +24,6 @@ public class UrlService {
 
     private final UrlRepository repository;
     private final HashidProperties hashidProperties;
-    private final ApplicationEventPublisher eventPublisher;
 
     private Hashids hashids;
 
@@ -60,34 +58,32 @@ public class UrlService {
     @Transactional
     public String getOriginalUrl(String code, String ip, String userAgent, String referrer) {
         log.info("Resolving original URL for code: {} from IP: {} UA: {} Referrer: {}", code, ip, userAgent, referrer);
-
         // An in memory spring cache with caffeine or distributed like redis can be used to improve here
-
-        UrlMapping mapping = getUrlMappingCached(code);
-
-        // The call to update the hit and access log should be asynchronous and in a separate transaction
-        // Emit event instead of direct save, this is just to demonstrate but not the final solution
-        eventPublisher.publishEvent(new UrlAccessedEvent(
-                code,
-                OffsetDateTime.now(),
-                ip,
-                userAgent,
-                referrer
-        ));
-        // Simple to use spring event with @Async and handle the update, but the trade-off is managing thread pool
-
+        final UrlMapping mapping = getUrlMappingCached(code);
         return mapping.getOriginalUrl();
     }
 
-    private UrlMapping getUrlMappingCached(String code) {
-        UrlMapping mapping = repository.findByShortCode(code)
+    @Transactional
+    public void updateUrlAccess(String code, AccessLog log) {
+        final UrlMapping urlMapping = repository.findByShortCode(code)
                 .orElseThrow(() -> new ResourceNotFoundException("Short code not found: " + code));
-        return mapping;
+        urlMapping.updateHit();
+        log.setUrlMapping(urlMapping);
+        urlMapping.getAccessLogs().add(log);
+        repository.save(urlMapping);
     }
 
     @Transactional(readOnly = true)
     public Optional<UrlMapping> getUrlWithLogs(String code) {
         log.info("Fetching UrlMapping with logs for code: {}", code);
         return repository.findByShortCodeWithLogs(code);
+    }
+
+
+    private UrlMapping getUrlMappingCached(String code) {
+
+        //This should ideally check the cache and return from cache if exists, if not make a db call update cache and return
+        return repository.findByShortCode(code)
+                .orElseThrow(() -> new ResourceNotFoundException("Short code not found: " + code));
     }
 }

@@ -78,6 +78,10 @@ public class UrlControllerRestAssuredTest {
                 .get("/urls/" + code + "/redirect")
                 .then()
                 .statusCode(200);
+
+        given().port(port).when().get("/urls/" + code).then()
+                .log().body().statusCode(200)
+                .assertThat().body("hitCount", equalTo(1));
     }
 
     @Test
